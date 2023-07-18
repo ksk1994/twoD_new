@@ -1,0 +1,158 @@
+{% extends "twoD/layout.html" %}
+{% load custom_tags %}
+{% load static %}
+
+
+
+{% block content %}
+<div class="list-group">
+  <a type='button' class='nav-btn-custom no-bdr-top' href='{% url 'index' %}' >HOME</a>
+  <button type='button' class='nav-btn-custom ' onclick='showSession()'>အရင် စာရင်း</button>
+  <a type='button' class='nav-btn-custom no-bdr-bottom' href='{% url 'logout_view' %}' >အကောင့် ထွက်မယ်</a>
+</div>
+{% endblock %}
+{% block body %}
+{% if messages  %}
+    {% for message in messages %}
+        <h4 class="text-center {% if message.tags %}{{ message.tags }}{% endif %}">{{ message }}</h4>
+    {% endfor %}
+{% endif %}
+
+<script src="{% static 'twoD/history.js' %}"></script>
+
+
+<button type="button" id='logModalBtn' data-bs-toggle="modal" data-bs-target="#logModal" hidden>
+</button>
+
+<!-- Modal -->
+<div class="modal fade" id="logModal" tabindex="-1" aria-labelledby="logModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h1 class="modal-title fs-5" id="mdl_title"></h1>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" id='mdl_close'></button>
+      </div>
+      <div class="modal-body">
+        <h5 id='mdlAlert'></h5>
+        <div id='mdl_body'></div>
+      </div>
+      <div class="modal-footer" id='mdl_footer'>
+        <button type="button" id='mdl_close' class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id='hiddenComm' hidden>
+  <input  id='hiddenComm_Owner' data-id="{{ request.user.id }}" data-name='{{ request.user.first_name }}' data-rate="{{ request.user.com_rate }}">
+</div>
+
+<table class="table table-striped caption-top mb-4">
+    <caption class='ms-3 mb-1'><h4>{{ arc.session.date }}({{ arc.session.ampm }}){% if arc.jp %} <b  class='text-bg-success rounded p-2' id='jpNum' data-id='{{ arc.jp.id }}'>{{ arc.jp.num }}</b>{% else %}<small class='text-warning ms-2'>(No JackPot Number)</small>{% endif %}</h4></caption>
+    
+    <thead>
+      <tr>
+        <th scope="col">ဂဏန်း</th>
+        <th scope="col">Amount</th>
+        <th scope="col">ဒိုင်ပြောင်းငွေ</th>
+        <th scope="col">ကော်သမားများ</th>
+      </tr>
+    </thead>
+    <tbody>
+        {% for num in arc.archiveNum.all %}
+        <tr {% if num.num.id == arc.jp.id %} class='text-bg-success'{% endif %}>
+            <th scope="row" class='p-0'>
+              <p class='m-0'>{{ num.num.num }}</p>
+              <small class='m-0'>{% if num.limit %}({{ num.limit }}){% else %}(ဘရိတ်မပါ){% endif %}</small>
+            </th>
+            <td class='amounts'>{{ num.amount }}</td>
+            <td class='transfers' data-num='{{ num.num.id }}'>
+              {% if num.limit %}
+              {% if num.amount > num.limit%}
+              {{ num.amount|subtract:num.limit }}
+              {% else %}
+              0{% endif %}
+              {% else %}0{% endif %}
+            </td>
+            <td class='p-0'>
+              <ul class="list-group list-group-flush" style='height: fit-content;'>
+                {% for log in num.archiveLog.all %}
+                  {% if log.comm %}
+                  <li class="list-group-item p-0" style="background-color: transparent;"><small>{{ log.comm.name }}||<b class='commsAmount' data-num='{{ num.num.id }}'  data-rate='{{ log.commRate }}' data-name='{{ log.comm.name }}' data-id='{{ log.comm.id }}'>{{ log.amount }}</b></small></li>
+                  {% else %}
+                  <li class="list-group-item p-0" style="background-color: transparent;"><small>ကိုယ်တိုင်||<b class='commsAmount' data-num='{{ num.num.id }}' data-name='No Commission' data-rate='{{ log.commRate }}' data-id=''>{{ log.amount }}</b></small></li>
+                  {% endif %}
+                {% endfor %}
+              </ul>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+    <tfoot>
+      <tr class="table-info">
+        <th scope='row'>စုစုပေါင်း</th>
+        <td><b id='total'></b></td>
+        <td><b id='totalTransfer'></b></td>
+      </tr>
+    </tfoot>
+</table>
+  
+<table class="table table-striped caption-top mb-4">
+  <caption class='ms-3 mb-1'><h4>ကော်သမားများစာရင်း</h4></caption>
+  <thead>
+    <tr id='commTHead'>
+      <th scope="col">နာမည်</th>
+      <th scope="col">Amount</th>
+      <th scope="col">ကော်ကြေး</th>
+      <th scope="col" class='payout'>လျော်ကြေး</th>
+      <th scope="col">ကျန်ငွေ</th>
+    </tr>
+  </thead>
+  <tbody id='commTBody'>
+    
+  </tbody>
+  <tfoot>
+    <tr class="table-info">
+      <th scope='row'>စုစုပေါင်း</th>
+      <td><b id='totalAmount'></b></td>
+      <td><b id='totalCommFee'></b></td>
+      <td><b id='totalPO' class='payout'></b></td>
+      <td><b id='totalGet'></b></td>
+    </tr>
+  </tfoot>
+</table>
+
+
+<table class="table table-striped caption-top  mb-4">
+  <caption class='ms-3 mb-1'><h4>ဒိုင်ပြောင်းစာရင်း</h4></caption>
+  <thead>
+    <tr>
+      <th scope="col">စုစုပေါင်းလွှဲငွေ</th>
+      <th scope="col">ပေါက်ဂဏန်းလွှဲငွေ</th>
+      <th scope="col">ကော်ကြေး</th>
+      <th scope="col">လျော်ငွေ</th>
+      <th scope="col">ကျန်ငွေ</th>
+    </tr>
+  </thead>
+  <tbody id='transferBody'>
+    
+  </tbody>
+</table>
+
+<table id='profitTable' class="table table-striped caption-top">
+  <caption class='ms-3 mb-1'><h4>အမြတ်ငွေစာရင်း</h4></caption>
+  <thead>
+    <tr>
+      <th scope="col">#</th>
+      <th scope="col">ကော်သမားများကျန်ငွေ</th>
+      <th scope="col">ဒိုင်လွှဲကျန်ငွေ</th>
+      <th scope="col">အမြတ်</th>
+    </tr>
+  </thead>
+  <tbody id='profitBody'>
+    
+  </tbody>
+</table>
+<div style='height: 100px;'></div>
+{% endblock %}

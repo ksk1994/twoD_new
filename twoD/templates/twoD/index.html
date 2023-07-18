@@ -1,0 +1,105 @@
+{% extends "twoD/layout.html" %}
+{% load tz %}
+{% load static %}
+
+
+{% block content %}
+<div class="list-group">
+  <button type='button' class='nav-btn-custom no-bdr-top' onclick="showAddValue()">အရောင်း</button>
+  <button type='button' class='nav-btn-custom no-bdr-top' onclick="showAddLimit()">ဘရိတ် ထည့်မယ်</button>
+  <button type='button' class='nav-btn-custom ' onclick='showLogs()'>ဒီနေ့မှတ်တမ်း</button>
+  <button type='button' class='nav-btn-custom ' onclick='checkTotal()'>စာရင်းစစ်</button>
+  <button type='button' class='nav-btn-custom ' onclick='showCloseEntry()'>အဝင်ပိတ်</button>
+  <button type='button' class='nav-btn-custom ' onclick='showAddJp()'>ပေါက်သီးထည့်</button>
+  <button type='button' class='nav-btn-custom ' onclick="showCreateNewComm()" >ကော်အသစ်</button>
+  <button type='button' class='nav-btn-custom ' onclick='showSetting()'>ကော်ကြေးချိန်</button>
+  <button type='button' class='nav-btn-custom ' onclick='showSession()'>အရင် စာရင်း</button>
+
+  <a type='button' class='nav-btn-custom no-bdr-bottom' href='{% url 'logout_view' %}' >အကောင့် ထွက်မယ်</a>
+</div>
+{% endblock %}
+
+{% block body %}
+
+{% if messages  %}
+    {% for message in messages %}
+        <h4 class="text-center {% if message.tags %}{{ message.tags }}{% endif %}">{{ message }}</h4>
+    {% endfor %}
+{% endif %}
+<div class='loadingDi' id='loadingDiv' style='display: none;'>
+  <div class='position-absolute top-50 start-50 translate-middle'>
+    <div class='container text-center mx-auto '>
+    <div class="mx-auto spinner-border my-auto text-light" role="status">
+      <span class="visually-hidden">Loading...</span>
+    </div>
+    </div>
+    <p id='loadingTxt' class='text-bg-danger text-center p-1'></p>
+  </div>
+</div>
+
+<script src="{% static 'twoD/index.js' %}"></script>
+
+<button type="button" id='logModalBtn' data-bs-toggle="modal" data-bs-target="#logModal" hidden>
+</button>
+
+<!-- Modal -->
+<div class="modal fade" id="logModal" tabindex="-1" aria-labelledby="logModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h1 class="modal-title fs-5" id="mdl_title"></h1>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" id='mdl_close'></button>
+      </div>
+      <div class="modal-body">
+        <h5 id='mdlAlert'></h5>
+        <div id='mdl_body'></div>
+      </div>
+      <div class="modal-footer" id='mdl_footer'>
+        <button type="button" id='mdl_close' class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id='hiddenLog' hidden>
+  {% for log in logs %}
+  <input class="logs" id='hiddenLog_{{ log.id }}' data-id="{{ log.id }}" data-amount='{{ log.amount }}' data-num="{{ log.num.num }}" data-time="{{ log.time|date:'h:i A' }}" {% if log.comm %} data-comm="{{ log.comm.name}}" data-commrate='{{ log.comm.com_rate }}' {% else %} data-comm=""  {% endif %}>
+  {% endfor %}
+</div>
+
+<div id='hiddenComm' hidden>
+  <input  id='hiddenComm_Owner' data-id="{{ request.user.id }}" data-name='{{ request.user.first_name }}' data-rate="{{ request.user.com_rate }}">
+  {% for comm in comms %}
+  <input class="comms" id='hiddenComm_{{comm.id}}' data-id="{{ comm.id }}" data-name='{{ comm.name }}' data-rate="{{ comm.com_rate }}">
+  {% endfor %}
+</div>
+
+<div  class="container-fluid" style='width: 100%; height: 90vh; overflow-y: visible;'>
+  <div class="d-flex justify-content-center flex-wrap" style='width: 100%;'>
+    {% for val in vals %}
+    <div class="container mx-1 mb-3 border border-1 rounded val-con">
+      <div class='row  p-1'>
+        <div class='col-auto bg-primary-subtle p-1 rounded'><b class='nums' data-valid='{{ val.id }}' data-numid='{{ val.num.id }}'>{{ val.num.num }}</b></div>
+        <div class='col py-1 text-end vals rounded mb-1' data-valid='{{ val.id }}' data-limit='{{ val.limit }}' id='val_{{ val.id }}' data-num='{{ val.num.num }}'>{{ val.amount }}</div>
+        {% if val.limit %}
+        <span class="badge bg-warning-subtle text-dark limits" id='limit_{{val.id}}'>{{ val.limit }}</span>
+        {% else %}
+        <span class="badge bg-warning-subtle text-dark limits" id='limit_{{val.id}}'>-</span>
+        {% endif%}
+
+      </div>
+    </div>
+    {% endfor %}
+    
+  </div>
+</div>
+<div class='container-fluid fixed-center mb-5'>
+  <div class='position-relative p-5'>
+  <button type='button' class='sell-btn me-4 position-absolute top-50 end-0' onclick='showAddValue()'><i class="bi bi-plus-lg m-0"></i></button>
+  </div>
+</div>
+
+
+
+{% endblock %}
